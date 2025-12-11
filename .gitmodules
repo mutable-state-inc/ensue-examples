@@ -1,0 +1,3 @@
+[submodule "dev-mindshare"]
+	path = dev-mindshare
+	url = https://github.com/christinetyip/dev-mindshare
