@@ -1,0 +1,9 @@
+[submodule "Customer Service Bot with Customer Memory/Customer Service Bot with Customer Memory/dev-mindshare"]
+	path = Customer Service Bot with Customer Memory/Customer Service Bot with Customer Memory/dev-mindshare
+	url = https://github.com/christinetyip/dev-mindshare
+[submodule "Developer Graph/dev-mindshare"]
+	path = Developer Graph/dev-mindshare
+	url = https://github.com/christinetyip/dev-mindshare
+[submodule "dev-mindshare"]
+	path = dev-mindshare
+	url = https://github.com/christinetyip/dev-mindshare
