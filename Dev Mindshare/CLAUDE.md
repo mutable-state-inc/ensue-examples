@@ -28,6 +28,15 @@ codex mcp add ensue-memory \
 Then open this project in your coding agent.  
 The agent will use the instructions in this file to read/write memories via the `ensue-memory` tool.
 
+### 0.2. MCP bootstrap (Claude)
+- If `list_mcp_tools` is unavailable in Claude, self-bootstrap:
+  1) `claude mcp list` to confirm `ensue-memory` is registered.
+  2) `claude mcp get ensue-memory` to verify config/token.
+  3) Fetch tool schema once per session via HTTP: `curl -s -H "Authorization: Bearer $ENSUE_API_KEY" https://www.ensue-network.ai/api/tools` and parse tool names/endpoints; cache them for this session.
+  4) After the one-time curl, call Ensue methods directly (no repeated curl): `create_memory`, `get_memory`, `update_memory`, `delete_memory`, `search_memories`, `discover_memories`, `list_keys`, `subscribe_to_memory`, `unsubscribe_from_memory`.
+  5) If the one-time curl fails, proceed assuming the tools above exist and call them directly. Only declare Ensue unavailable if both MCP calls and the curl fallback fail.
+  6) If you ever see "Ensue isn't configured" in this session, rerun steps 1–4 once, cache the tools, then retry discover→search before proceeding.
+
 ## 0.1. Session Intro for First-Time Users (Agent)
 
 When you detect that you are running in this workspace **and** the `ensue-memory` MCP tool is available and reachable:
@@ -45,7 +54,7 @@ Good default intro:
 
 When you are coding in this workspace and the `ensue-memory` MCP tool is available, you should act as a **memory-first coding agent**:
 
-1. **On session start**, load relevant memories from Ensue.
+1. **On session start**, map and load relevant memories from Ensue (discover first, then search only what matters).
 2. **During coding**, read and write memories to:
    - remember coding style and preferences  
    - remember recurring mistakes and how they were fixed  
@@ -69,24 +78,16 @@ Ensue uses structured keys + JSON‑like values + embeddings.
 
 ### 2.1. Key naming
 
-Ensue keys are **flat strings**. There is no real directory structure; any separators
-like `/` or `:` are just part of the key name. Access is controlled purely by
-regex over the full key string.
+Ensue keys are **flat strings**. There is no real directory structure; any separators like `/` or `:` are just part of the key name. Access is controlled purely by regex over the full key string.
 
-For consistency, we *treat* keys as if they were path-like, using `/` as a
-separator, but this is only a naming convention.
+For consistency, we *treat* keys as if they were path-like, using `/` as a separator, but this is only a naming convention.
 
-Use this pattern for personal memories:
-
+**User-first convention (required):**
 ```
-personal/<memory-type>/<project-or-context>/<slug>
+@<user>/<visibility>/<memory-type>/<project-or-context>/<slug>
 ```
 
-Or for user-specific non-project memories:
-
-```
-personal/<memory-type>/<slug>
-```
+Where `<visibility>` is one of: `personal`, `friends`, `coworkers`.
 
 Where:
 - `<memory-type>` is one of:
@@ -106,12 +107,15 @@ Where:
 
 **Examples:**
 ```
-personal/coding-style/weather-bot/fastapi-routes
-personal/mistakes/weather-bot/react-useeffect-deps
-personal/tools/weather-bot/2025-11-18-zod
-personal/tech-stack/preferences
-personal/interests/ai-agents
-personal/projects/ensue
+@christine/personal/preferences/design-aesthetic
+@bkase/friends/architecture/azul/epics-overview
+@sai/coworkers/tools/portfolio-tracker/db-choice
+@christine/personal/coding-style/weather-bot/fastapi-routes
+@christine/personal/mistakes/weather-bot/react-useeffect-deps
+@christine/personal/tools/weather-bot/2025-11-18-zod
+@christine/personal/tech-stack/preferences
+@christine/personal/interests/ai-agents
+@christine/personal/projects/ensue
 ```
 
 ### 2.2. Values
@@ -160,7 +164,7 @@ You MUST automatically create memories in these situations:
 
 **Storage rules:**
 - Create memory immediately, don't wait or ask
-- Use `personal/*` prefix by default
+- Use `@<user>/friends/*` prefix by default for auto writes (username first, then visibility)
 - Include semantic embeddings on all memories (set embed=true, embed_source="description")
 - Keep descriptions concise and searchable
 - Update existing memories rather than duplicate
@@ -172,8 +176,12 @@ You MUST automatically create memories in these situations:
 **AUTOMATICALLY and SILENTLY:**
 
 1. Infer project name from working directory or repo.
-2. Read all relevant memories (coding-style, preferences, mistakes, architecture, todo, experiments).
-3. Internally apply these patterns to all code generation.
+2. If tools are unknown, run the MCP bootstrap in 0.2 (list, get, one-time curl tools) so Ensue methods are available for this session.
+3. Discover what exists without pulling everything: use `discover_memories` with broad queries/prefixes (coding-style, preferences, mistakes, architecture, todo, experiments, session, tools) to see which handles/namespaces are present.
+4. Load only what matters: based on the discover skim, run targeted `search_memories` for the current handle and relevant shared handles to fetch values for coding-style, preferences, mistakes, architecture, todo, experiments. Skip irrelevant handles/namespaces to save context.
+5. Internally apply these patterns to all code generation.
+6. Detect user handle: try to infer from existing Ensue keys (leading `@handle`), local git config, or `current_user_info`. If unclear, ask once for the handle (e.g., `@christine`) and remember it.
+7. Remember Ensue is a shared network: only claim ownership when the leading handle matches the current user. For first-time sessions, say "Ensue has stored preferences for this workspace/dev circle" instead of "your preferences" and ask if the user wants them applied.
 
 **Only mention** if you find important warnings or mistakes to avoid.
 Otherwise, work silently with stored context.
@@ -369,7 +377,13 @@ Value:
 
 ## 4. Retrieval Strategy
 
-The agent should load memories based on context:
+The agent should load memories based on context while keeping context lean:
+
+**Recommended flow:**
+- Step 1: `discover_memories` with broad queries/prefixes (coding-style, preferences, architecture, mistakes, todo, experiments, session, tools) to see what exists and which handles/namespaces are present.
+- Step 2: From the skim, pick only the relevant handles (current user + desired shared circles) and types.
+- Step 3: `search_memories` narrowly for those handles/types to fetch actual values.
+- Step 4: Apply; skip irrelevant or noisy namespaces.
 
 ### 4.1. For code generation
 Load:
@@ -412,7 +426,8 @@ Use semantic (embedding) search where beneficial, especially when user asks open
 - Update memory when user corrects you.
 - **Create memories automatically as you learn** new patterns, preferences, or make decisions.
 - **Store immediately** when you observe: coding preferences, tool choices, mistakes, architecture decisions, personal context.
-- **Default to `personal/*` prefix** unless user explicitly shares with friends/coworkers.
+- **Default to `@<user>/friends/*` prefix** for auto writes; use `@<user>/coworkers/*` for explicit shared team items; use `@<user>/personal/*` for sensitive/private context. Always include the leading user handle.
+- When surfacing memories, state provenance instead of ownership: "`@<user>/friends/*` memories are shared circle defaults; `@<user>/coworkers/*` are team-shared; `@<user>/personal/*` are user-private." Avoid claiming "your preferences" unless the leading handle matches the current user and the prefix is `personal/`.
 - Maintain minimal, structured keys.
 - Avoid duplicate or overly noisy memories - update existing memories rather than create duplicates.
 
@@ -551,9 +566,9 @@ This means the *key name* determines who can read, write, update, or delete a me
 The agent MUST store memories under the correct prefix to ensure proper visibility:
 
 ### Valid top‑level prefixes
-- `personal/*` — visible only to the user  
-- `friends/*` — visible to the user's approved friend circle  
-- `coworkers/*` — visible to coworkers / collaborators  
+- `@<user>/personal/*` — visible only to that user  
+- `@<user>/friends/*` — visible to the user's approved friend circle  
+- `@<user>/coworkers/*` — visible to coworkers / collaborators  
 
 ### 5.3.1 How Ensue evaluates access
 Ensue checks ACL rules like:
@@ -562,12 +577,12 @@ Ensue checks ACL rules like:
 Name: Friends
 Scope Type: group
 Action: read
-Key Regex: ^friends/*
+Key Regex: ^@[^/]+/friends/*
 ```
 
 Meaning anyone in the **Friends** group can read keys beginning with:  
 ```
-friends/
+@<user>/friends/
 ```
 
 Therefore the agent must ALWAYS choose the prefix correctly.
@@ -582,7 +597,7 @@ Use for:
 
 **Example key:**
 ```
-personal/project/weather-bot/mistakes/react-useeffect-deps
+@christine/personal/project/weather-bot/mistakes/react-useeffect-deps
 ```
 
 ### 5.3.3 When to use friends/*
@@ -594,7 +609,7 @@ Use for:
 
 **Example key:**
 ```
-friends/tools/drizzle-2025-11-18
+@christine/friends/tools/drizzle-2025-11-18
 ```
 
 ### 5.3.4 When to use coworkers/*
@@ -606,16 +621,16 @@ Use for:
 
 **Example key:**
 ```
-coworkers/project/weather-bot/architecture/error-handling
+@christine/coworkers/project/weather-bot/architecture/error-handling
 ```
 
 ### 5.3.5 Default visibility rules
 
 When storing automatically:
-- **Default to `friends/*`** for all user-specific patterns, preferences, coding style, mistakes, and personal context
-- Use `coworkers/*` only for shared project decisions user explicitly mentions for team collaboration
+- **Default to `@<user>/friends/*`** for all user-specific patterns, preferences, coding style, mistakes, and personal context
+- Use `@<user>/coworkers/*` only for shared project decisions user explicitly mentions for team collaboration
 
-**If truly uncertain (rare), default to `personal/*` (most private).**
+**If truly uncertain (rare), default to `@<user>/personal/*` (most private).**
 
 Never ask about visibility - just use the appropriate prefix based on context.
 
@@ -624,10 +639,15 @@ Because Ensue uses **regex-based key control**, VALUES do not determine access.
 Only key prefixes do.
 
 The agent must rely exclusively on:
-- the prefix (`personal/`, `friends/`, `coworkers/`)
+- the prefix with user (`@<user>/personal/`, `@<user>/friends/`, `@<user>/coworkers/`)
 - Ensue console ACLs
 
 This aligns the markdown behavior with how Ensue truly works.
+
+### 5.3.7 Identifying whose memories you loaded
+- `personal/*` memories are owned by the current user, so it is safe to say "your preferences" only when the prefix is `personal/`.
+- `friends/*` and `coworkers/*` memories are shared; never assume they belong to the current user. Say "Ensue has stored preferences for this workspace/dev circle" and let the user choose whether to apply them.
+- If provenance is unclear or mixed, present neutrally and confirm adoption before applying.
 
 ---
 
@@ -640,5 +660,6 @@ If the `ensue-memory` tool is unreachable:
   > “Ensue memory is unavailable, so I can’t access or save persistent memory.”
 - Continue as a normal stateless coding agent.
 - Do not attempt memory writes until tool becomes available.
+- If `list_mcp_tools` is missing: attempt the bootstrap (0.2) with `claude mcp list`, `claude mcp get`, and curl to `/api/tools` before declaring it unavailable.
 
 ---

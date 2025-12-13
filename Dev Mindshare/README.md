@@ -2,7 +2,7 @@
 
 This repo shows in 3 steps how to wire Ensue as a persistent memory network for coding agents (Codex, Claude) so you can get a “memory-first” experience and share/see how other developers think about coding (style, infra decisions, patterns). The notes below explain how to set up, run, and what to say to your agent. 
 
-<img width="400" alt="image" src="https://github.com/user-attachments/assets/da5911d7-12d1-497c-8233-d97c64930a2e" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/da5911d7-12d1-497c-8233-d97c64930a2e" />
 
 
 ## What you get
@@ -63,7 +63,6 @@ Hey, load any Ensue memories for this project and give me a one-line status on w
 ## Repo contents
 - `AGENTS.md` — Auto-applied instructions for Codex users (copied from `dev-mindshare.md`).
 - `CLAUDE.md` — Auto-applied instructions for Claude users (copied from `dev-mindshare.md`).
-- `dev-mindshare.md` — Full agent instructions for Ensue (memory model, key conventions, auto-save rules, social graph tags, availability fallbacks).
 - `README.md` — This overview and quick-start guide.
 
 ## Tips for a smooth first run
