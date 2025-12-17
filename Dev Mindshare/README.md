@@ -1,4 +1,4 @@
-# Dev Mindshare Example
+# Coding Style Example
 
 This repo shows in 3 steps how to wire Ensue as a persistent memory network for coding agents (Codex, Claude) so you can get a “memory-first” experience and share/see how other developers think about coding (style, infra decisions, patterns). The notes below explain how to set up, run, and what to say to your agent. 
 
@@ -66,16 +66,11 @@ Hey, load any Ensue memories for this project and give me a one-line status on w
   - “What did you save to Ensue for this project? Any general takeaways or feedback for me?”
   - "Based on the memories on Ensue, how are others thinking about [infra and aws deployments]?"
 
-## What the agent will do (per `dev-mindshare.md`)
+## What the agent will do
 - On session start: load relevant memories (coding style, preferences, mistakes, architecture, todo, tools, experiments).
 - During work: automatically store preferences, tool choices, mistakes fixed, decisions, and experiments with structured keys (e.g., `personal/coding-style/<project>/<slug>`), embedding summaries for search.
 - Use correct visibility prefixes (`personal/`, `friends/`, `coworkers/`) based on context; defaults to `friends/` unless clearly private (then `personal/`), or explicitly team-shared (`coworkers/`).
 - If Ensue is unavailable, it will mention that memory is disabled and continue stateless.
-
-## Repo contents
-- `AGENTS.md` — Auto-applied instructions for Codex users (copied from `dev-mindshare.md`).
-- `CLAUDE.md` — Auto-applied instructions for Claude users (copied from `dev-mindshare.md`).
-- `README.md` — This overview and quick-start guide.
 
 ## Tips for a smooth first run
 - Keep your first task small (“audit the API routes” or “add a new React page”) so you can see memories being created.
