@@ -10,11 +10,33 @@ This repo shows in 3 steps how to wire Ensue as a persistent memory network for 
 - Starter prompts so first-time users know what to say.
 
 ## Prerequisites
-- Codex CLI or Claude with MCP support installed.
+- Codex CLI or Claude Clode.
 
 ## Getting Started
 
-### Step 1: Set the API Key and Add the MCP Server
+### Step 1: Download instructions for Codex or Claude Code
+
+- Claude users: download `CLAUDE.md` into your project directory before starting Claude.
+- Codex users: download `AGENTS.md` into your project directory before starting Codex.
+
+### Step 2: Install Skill (Claude) or add the MCP Server (Codex)
+
+#### For Claude Code users:
+
+Start Claude Code and install the Skill.
+
+```bash
+/plugin marketplace add https://github.com/mutable-state-inc/ensue-skill
+/plugin install ensue-memory
+```
+
+Then tell Claude Code which API key to use:
+
+```bash
+ENSUE_API_KEY is lmn_695bff5b5b6d4bfe82ffaf2ee9c1167c
+```
+
+#### For Codex users:
 
 Set the API key:
 
@@ -24,13 +46,6 @@ export ENSUE_API_KEY="lmn_695bff5b5b6d4bfe82ffaf2ee9c1167c"
 
 Then add the Ensue MCP server:
 
-Claude:
-```bash
-claude mcp add --transport http ensue-memory \
-  https://www.ensue-network.ai/api/ \
-  --header "Authorization: Bearer $ENSUE_API_KEY"
-```
-
 Codex:
 ```bash
 codex mcp add ensue-memory \
@@ -38,10 +53,7 @@ codex mcp add ensue-memory \
   --bearer-token-env-var ENSUE_API_KEY
 ```
 
-### Step 2: Download instructions and start Claude/Codex
-- Claude users: download `CLAUDE.md` into your project directory before starting Claude.
-- Codex users: download `AGENTS.md` into your project directory before starting Codex.
-- Open the project in your agent and start; the file is auto-loaded as high-priority instructions.
+Start Codex.
 
 ### Step 3: Start coding
 
@@ -73,4 +85,4 @@ Hey, load any Ensue memories for this project and give me a one-line status on w
 ## Next steps / advanced
 - Get your own `ENSUE_API_KEY` and swap it into the install commands. The included demo key has restricted permissions; your own key lets you update keys, create private-only memories (e.g., personal front-end preferences), and control visibility per prefix.
 DM me (https://x.com/christinetyip) or submit this form (https://forms.gle/d4Cg5LEP9scs6XJE6) to get your own personal key. I'll probably try to automate this process later, but for now, you can expect a response within 24 hours.
-- Package the core flow as a Skill in Claude or Codex if you want a reusable toggle you can carry across repos or share with teammates. Use it to quickly enable/disable Ensue behaviors without renaming files.
+- Subscribe to keys from other developers and receive notifications when the key is updated
