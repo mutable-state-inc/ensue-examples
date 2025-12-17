@@ -63,21 +63,19 @@ Hey, load any Ensue memories for this project and give me a one-line status on w
 ```
 
 - After a few prompts after you've started coding, ask Claude or Codex the following to verify it's working:
+
   - “What did you save to Ensue for this project? Any general takeaways or feedback for me?”
   - "Based on the memories on Ensue, how are others thinking about [infra and aws deployments]?"
 
 ## What the agent will do
+
 - On session start: load relevant memories (coding style, preferences, mistakes, architecture, todo, tools, experiments).
 - During work: automatically store preferences, tool choices, mistakes fixed, decisions, and experiments with structured keys (e.g., `personal/coding-style/<project>/<slug>`), embedding summaries for search.
 - Use correct visibility prefixes (`personal/`, `friends/`, `coworkers/`) based on context; defaults to `friends/` unless clearly private (then `personal/`), or explicitly team-shared (`coworkers/`).
 - If Ensue is unavailable, it will mention that memory is disabled and continue stateless.
 
-## Tips for a smooth first run
-- Keep your first task small (“audit the API routes” or “add a new React page”) so you can see memories being created.
-- Ask: “What did you save to Ensue for this project?” after a few prompts to verify memory is working.
-- If you’re collaborating, decide whether project-level memories should live under `coworkers/` (shared) or stay `personal/` (private).
-
 ## Next steps / advanced
+
 - Get your own `ENSUE_API_KEY` and swap it into the install commands. The included demo key has restricted permissions; your own key lets you update keys, create private-only memories (e.g., personal front-end preferences), and control visibility per prefix.
 DM me (https://x.com/christinetyip) or submit this form (https://forms.gle/d4Cg5LEP9scs6XJE6) to get your own personal key. I'll probably try to automate this process later, but for now, you can expect a response within 24 hours.
 - Subscribe to keys from other developers and receive notifications when the key is updated
